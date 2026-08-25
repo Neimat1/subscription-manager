@@ -1,0 +1,43 @@
+#success-state {
+    display: none;
+}
+
+#error-state {
+    display: none;
+}
+
+table {
+    border-collapse: collapse;
+    width: 50%;
+}
+
+th,
+td {
+    border: 1px solid #333;
+    padding: 8px 12px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+h1 {
+    text-align: center;
+}
+
+.inner-container {
+    margin: 20px;
+}
+
+button {
+    margin: 5px;
+}
+
+#summary-container {
+    margin-bottom: 100px;
+}
+
+#subscription-name-status {
+    display: none;
+}
