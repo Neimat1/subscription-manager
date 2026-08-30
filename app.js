@@ -1,4 +1,5 @@
 import { fetchPlans, fetchInitialSubscriptions } from './data.js';
+import { saveSubscriptions, loadSubscriptions } from './storage.js';
 
 const loadingState = document.querySelector('#loading-state');
 const successState = document.querySelector('#success-state');
@@ -79,6 +80,7 @@ function validateAddSubscriptionForm() {
 
 function addNewSubscription(newSubscription) {
     allSubscriptions.unshift(newSubscription)
+    saveSubscriptions(allSubscriptions)
     renderSubscriptions(
         allSubscriptions,
         subscriptionHeaderTable,
@@ -208,8 +210,16 @@ async function loadDashboard() {
         let [plans, subscriptions] = await Promise.all(
             [fetchPlans(), fetchInitialSubscriptions()]
         );
-        allSubscriptions = subscriptions;
-        renderSubscriptions(subscriptions, subscriptionHeaderTable, subscriptionKeys, subscriptionFormatter);
+
+        const storedSubscriptions = loadSubscriptions();
+
+        if (!storedSubscriptions || storedSubscriptions.length < subscriptions.length)
+            allSubscriptions = subscriptions;
+        else
+            allSubscriptions = storedSubscriptions;
+
+
+        renderSubscriptions(allSubscriptions, subscriptionHeaderTable, subscriptionKeys, subscriptionFormatter);
         renderFilters(plans, planFilterContainer, 'Plan');
         renderFilters(statuses, statusFilterContainer, 'Status');
 
