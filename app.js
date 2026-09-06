@@ -1,5 +1,4 @@
 import { fetchPlans, fetchInitialSubscriptions } from './data.js';
-import { saveSubscriptions, loadSubscriptions } from './storage.js';
 
 const loadingState = document.querySelector('#loading-state');
 const successState = document.querySelector('#success-state');
@@ -61,7 +60,7 @@ function validateAddSubscriptionForm() {
 
         if (isValid) {
             addNewSubscription({
-                id: crypto.randomUUID,
+                id: 's1',
                 name: nameInput,
                 plan: planInput,
                 amount: Number.parseFloat(amountInput),
@@ -80,7 +79,6 @@ function validateAddSubscriptionForm() {
 
 function addNewSubscription(newSubscription) {
     allSubscriptions.unshift(newSubscription)
-    saveSubscriptions(allSubscriptions)
     renderSubscriptions(
         allSubscriptions,
         subscriptionHeaderTable,
@@ -100,7 +98,6 @@ function renderSubscriptions(subscriptionsData, subscriptionHeaderTable, subscri
     subscriptionContainer.replaceChildren(); //clear before load
     let subscriptionTable = createTable(subscriptionHeaderTable);
     subscriptionTable = createTableRowsFromObject(subscriptionTable, subscriptionsData, subscriptionKeys, subscriptionFormatter)
-    appendDeleteActionColumnForList(subscriptionTable, subscriptionsData);
     subscriptionContainer.appendChild(subscriptionTable);
     console.log(subscriptionsData)
 }
@@ -129,29 +126,6 @@ function createTable(tableHeader) {
     thead.appendChild(headerRow);
     table.appendChild(thead);
     return table;
-}
-
-function appendDeleteActionColumnForList(table, list) {
-    //append header action 
-    const headerActionCell = document.createElement('th');
-    const headerRow = table.tHead.rows[0];
-
-    headerActionCell.textContent = 'Action';
-    headerRow.appendChild(headerActionCell);
-
-    //append cells to columns 
-    const tableBodyRows = Array.from(table.tBodies[0].rows);
-    tableBodyRows.forEach((row, index) => {
-        const deleteBtn = document.createElement('button')
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.classList.add('deleteSubscription')
-        deleteBtn.dataset.subscriptionId = list[index].id;
-
-
-        const cell = row.insertCell(-1);
-        cell.appendChild(deleteBtn);
-    })
-
 }
 
 function createTableRowsFromObject(table, data, keys, formatter = {}) {
@@ -210,16 +184,8 @@ async function loadDashboard() {
         let [plans, subscriptions] = await Promise.all(
             [fetchPlans(), fetchInitialSubscriptions()]
         );
-
-        const storedSubscriptions = loadSubscriptions();
-
-        if (!storedSubscriptions || storedSubscriptions.length < subscriptions.length)
-            allSubscriptions = subscriptions;
-        else
-            allSubscriptions = storedSubscriptions;
-
-
-        renderSubscriptions(allSubscriptions, subscriptionHeaderTable, subscriptionKeys, subscriptionFormatter);
+        allSubscriptions = subscriptions;
+        renderSubscriptions(subscriptions, subscriptionHeaderTable, subscriptionKeys, subscriptionFormatter);
         renderFilters(plans, planFilterContainer, 'Plan');
         renderFilters(statuses, statusFilterContainer, 'Status');
 
@@ -248,18 +214,6 @@ function filterSubscriptionsByStatus(subscriptions, status) {
     return subscriptions.filter(subscription => subscription.status === status)
 
 }
-
-function deleteSubscription(subscriptionId) {
-    const subscriptionIndex = allSubscriptions.findIndex(subscription =>
-        subscription.id === subscriptionId
-    );
-
-    if (subscriptionIndex === -1) return;
-
-    allSubscriptions.splice(subscriptionIndex, 1);
-
-}
-
 function renderSelectFormElement(data, selectElement) {
     data.forEach(item => {
         const option = document.createElement("option");
@@ -292,28 +246,11 @@ function setupEventDelegationFilter(filterContainer, filterMethod) {
     });
 }
 
-function setupEventDelegationDelete(parentContainer, deleteClass) {
-    parentContainer.addEventListener('click', (event) => {
-
-        const button = event.target.closest(deleteClass);
-        if (!button || !parentContainer.contains(button)) return;
-
-        const subscriptionId = button.dataset.subscriptionId;
-        deleteSubscription(subscriptionId);
-
-        renderSubscriptions(allSubscriptions, subscriptionHeaderTable, subscriptionKeys, subscriptionFormatter);
-        getSummary();
-    });
-}
-
-
-
 function loadApp() {
     loadDashboard();
     retryBtn.addEventListener('click', loadDashboard);
     setupEventDelegationFilter(statusFilterContainer, filterSubscriptionsByStatus)
     setupEventDelegationFilter(planFilterContainer, filterSubscriptionsByPlan)
-    setupEventDelegationDelete(subscriptionContainer, '.deleteSubscription')
     validateAddSubscriptionForm()
 }
 
